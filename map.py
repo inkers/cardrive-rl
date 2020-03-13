@@ -25,8 +25,8 @@ from ai import Dqn
 # Adding this line if we don't want the right click to put a red point
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'resizable', False)
-Config.set('graphics', 'width', '1429')
-Config.set('graphics', 'height', '660')
+Config.set('graphics', 'width', '776')
+Config.set('graphics', 'height', '437')
 
 # Introducing last_x and last_y, used to keep the last point in memory when we draw the sand on the map
 last_x = 0
@@ -39,7 +39,7 @@ brain = Dqn(5,3,0.9)
 action2rotation = [0,5,-5]
 last_reward = 0
 scores = []
-im = CoreImage("./images/MASK1.png")
+im = CoreImage("./images/white_road.png")
 
 # textureMask = CoreImage(source="./kivytest/simplemask1.png")
 
@@ -52,10 +52,10 @@ def init():
     global goal_y
     global first_update
     sand = np.zeros((longueur,largeur))
-    img = PILImage.open("./images/mask.png").convert('L')
+    img = PILImage.open("./images/mask_right_rotated.png").convert('L')
     sand = np.asarray(img)/255
-    goal_x = 1420
-    goal_y = 622
+    goal_x = 380
+    goal_y = 218
     first_update = False
     global swap
     swap = 0
@@ -119,6 +119,9 @@ class Game(Widget):
     ball1 = ObjectProperty(None)
     ball2 = ObjectProperty(None)
     ball3 = ObjectProperty(None)
+
+    disney_land = (718,262)
+    adventure_city = (75,226)
 
     def serve_car(self):
         self.car.center = self.center
@@ -184,12 +187,10 @@ class Game(Widget):
 
         if distance < 25:
             if swap == 1:
-                goal_x = 1420
-                goal_y = 622
+                goal_x, goal_y = self.disney_land
                 swap = 0
             else:
-                goal_x = 9
-                goal_y = 85
+                goal_x, goal_y = self.adventure_city
                 swap = 1
         last_distance = distance
 
@@ -236,9 +237,9 @@ class CarApp(App):
         parent.serve_car()
         Clock.schedule_interval(parent.update, 1.0/60.0)
         self.painter = MyPaintWidget()
-        clearbtn = Button(text = 'clear')
-        savebtn = Button(text = 'save', pos = (parent.width, 0))
-        loadbtn = Button(text = 'load', pos = (2 * parent.width, 0))
+        clearbtn = Button(text = 'clear', pos = (parent.width+140, 0), size=(70, 50))
+        savebtn = Button(text = 'save', pos = (parent.width, 0), size=(70, 50))
+        loadbtn = Button(text = 'load', pos = (parent.width+ 70, 0), size=(70,50))
         clearbtn.bind(on_release = self.clear_canvas)
         savebtn.bind(on_release = self.save)
         loadbtn.bind(on_release = self.load)

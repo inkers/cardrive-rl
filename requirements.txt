@@ -1,5 +1,9 @@
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
+# if this does not work execute these:
+# conda install -c peterj123 pytorch-cpu
+# conda install -c conda-forge kivy
+# conda install matplotlib
 # platform: linux-64
 _libgcc_mutex=0.1=conda_forge
 _openmp_mutex=4.5=0_gnu
