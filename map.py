@@ -41,9 +41,6 @@ last_reward = 0
 scores = []
 im = CoreImage("./images/white_road.png")
 
-# textureMask = CoreImage(source="./kivytest/simplemask1.png")
-
-
 # Initializing the map
 first_update = True
 def init():
@@ -51,13 +48,17 @@ def init():
     global goal_x
     global goal_y
     global first_update
-    sand = np.zeros((longueur,largeur))
+    global downtown_disney_city
+    global adventure_city
+    global swap
+
+    downtown_disney_city = (685,132)
+    adventure_city = (76,206)
+    sand = np.zeros((longitude,latitude))
     img = PILImage.open("./images/mask_right_rotated.png").convert('L')
     sand = np.asarray(img)/255
-    goal_x = 380
-    goal_y = 218
+    goal_x, goal_y = downtown_disney_city
     first_update = False
-    global swap
     swap = 0
 
 
@@ -67,7 +68,7 @@ last_distance = 0
 # Creating the car class
 
 class Car(Widget):
-    
+
     angle = NumericProperty(0)
     rotation = NumericProperty(0)
     velocity_x = NumericProperty(0)
@@ -96,19 +97,24 @@ class Car(Widget):
         self.signal1 = int(np.sum(sand[int(self.sensor1_x)-10:int(self.sensor1_x)+10, int(self.sensor1_y)-10:int(self.sensor1_y)+10]))/400.
         self.signal2 = int(np.sum(sand[int(self.sensor2_x)-10:int(self.sensor2_x)+10, int(self.sensor2_y)-10:int(self.sensor2_y)+10]))/400.
         self.signal3 = int(np.sum(sand[int(self.sensor3_x)-10:int(self.sensor3_x)+10, int(self.sensor3_y)-10:int(self.sensor3_y)+10]))/400.
-        if self.sensor1_x>longueur-10 or self.sensor1_x<10 or self.sensor1_y>largeur-10 or self.sensor1_y<10:
+        if self.sensor1_x>longitude-10 or self.sensor1_x<10 or self.sensor1_y>latitude-10 or self.sensor1_y<10:
             self.signal1 = 10.
-        if self.sensor2_x>longueur-10 or self.sensor2_x<10 or self.sensor2_y>largeur-10 or self.sensor2_y<10:
+        if self.sensor2_x>longitude-10 or self.sensor2_x<10 or self.sensor2_y>latitude-10 or self.sensor2_y<10:
             self.signal2 = 10.
-        if self.sensor3_x>longueur-10 or self.sensor3_x<10 or self.sensor3_y>largeur-10 or self.sensor3_y<10:
+            # rotate car on boundaries
+            self.rotation = 90
+        if self.sensor3_x>longitude-10 or self.sensor3_x<10 or self.sensor3_y>latitude-10 or self.sensor3_y<10:
             self.signal3 = 10.
-        
+
 
 class Ball1(Widget):
     pass
 class Ball2(Widget):
     pass
 class Ball3(Widget):
+    pass
+
+class Destination(Widget):
     pass
 
 # Creating the game class
@@ -119,9 +125,7 @@ class Game(Widget):
     ball1 = ObjectProperty(None)
     ball2 = ObjectProperty(None)
     ball3 = ObjectProperty(None)
-
-    disney_land = (718,262)
-    adventure_city = (75,226)
+    destination = ObjectProperty(None)
 
     def serve_car(self):
         self.car.center = self.center
@@ -135,16 +139,16 @@ class Game(Widget):
         global last_distance
         global goal_x
         global goal_y
-        global longueur
-        global largeur
+        global longitude
+        global latitude
         global swap
-        
 
-        longueur = self.width
-        largeur = self.height
+        longitude = self.width
+        latitude = self.height
         if first_update:
             init()
 
+        self.destination.pos = goal_x, goal_y
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
         orientation = Vector(*self.car.velocity).angle((xx,yy))/180.
@@ -161,7 +165,6 @@ class Game(Widget):
         if sand[int(self.car.x),int(self.car.y)] > 0:
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
             print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
-            
             last_reward = -1
         else: # otherwise
             self.car.velocity = Vector(2, 0).rotate(self.car.angle)
@@ -169,8 +172,9 @@ class Game(Widget):
             print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
             if distance < last_distance:
                 last_reward = 0.1
-            # else:
-            #     last_reward = last_reward +(-0.2)
+            else:
+                print('penalising')
+                last_reward = last_reward +(-0.2)
 
         if self.car.x < 5:
             self.car.x = 5
@@ -187,12 +191,15 @@ class Game(Widget):
 
         if distance < 25:
             if swap == 1:
-                goal_x, goal_y = self.disney_land
+                goal_x, goal_y = downtown_disney_city
+                self.destination.pos = downtown_disney_city
                 swap = 0
             else:
-                goal_x, goal_y = self.adventure_city
+                goal_x, goal_y = adventure_city
+                self.destination.pos = adventure_city
                 swap = 1
         last_distance = distance
+        pass
 
 # Adding the painting tools
 
@@ -209,6 +216,7 @@ class MyPaintWidget(Widget):
             n_points = 0
             length = 0
             sand[int(touch.x),int(touch.y)] = 1
+            print(touch.x, touch.y)
             img = PILImage.fromarray(sand.astype("uint8")*255)
             img.save("./images/sand.jpg")
 
@@ -224,7 +232,6 @@ class MyPaintWidget(Widget):
             touch.ud['line'].width = int(20 * density + 1)
             sand[int(touch.x) - 10 : int(touch.x) + 10, int(touch.y) - 10 : int(touch.y) + 10] = 1
 
-            
             last_x = x
             last_y = y
 
@@ -252,7 +259,7 @@ class CarApp(App):
     def clear_canvas(self, obj):
         global sand
         self.painter.canvas.clear()
-        sand = np.zeros((longueur,largeur))
+        sand = np.zeros((longitude,latitude))
 
     def save(self, obj):
         print("saving brain...")

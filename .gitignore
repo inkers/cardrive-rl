@@ -108,3 +108,5 @@ venv.bak/
 images/blr
 images/disney
 images/orig
+
+kivy/
